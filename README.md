@@ -1,22 +1,15 @@
 # merlin-db
+---
+**Installation**: [installation.md](installation.md)
+**Usage**: [usage.md](usage.md)
+**Development**: [development.md](development.md)
+**Publishing**: [publishing.md](publishing.md)
+---
 
-👉\[\[\[**This is the initial readme for your
-[simple-modern-uv](https://github.com/jlevy/simple-modern-uv) template.** Fill it in and
-delete this message!
-Below are general setup instructions that you may remove or keep and adapt for your
-project.\]\]\]
+MerlinDB is an inspection and migration tool for the database which underpins Light Applications' GeniSys home-automation software.
 
-* * *
-
-## Project Docs
-
-For how to install uv and Python, see [installation.md](installation.md).
-
-For development workflows, see [development.md](development.md).
-
-For instructions on publishing to PyPI, see [publishing.md](publishing.md).
-
-* * *
-
-*This project was built from
-[simple-modern-uv](https://github.com/jlevy/simple-modern-uv).*
+Features:
+* **CLI**: A command-line interface for quick interactions.
+* **Database Inspection**: Easily inspect the structure and contents of your GeniSys.mdb.
+* **Export Database**: Dump your database into JSON.
+* **Device Migration**: Assist with moving your dynalite devices into Home Assistant or communicate directly.

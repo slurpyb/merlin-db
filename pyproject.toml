@@ -38,6 +38,12 @@ classifiers = [
 # ---- Main dependencies ----
 
 dependencies = [
+    "access-parser>=0.0.6",
+    "mdb-parser>=0.0.3",
+    "pydantic>=2.11.7",
+    "pydantic-settings>=2.10.1",
+    "rich>=14.1.0",
+    "typer>=0.17.3",
 ]
 
 
