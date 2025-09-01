@@ -1,0 +1,77 @@
+/* MerlinDB Interactive Browser Styles */
+
+#main_container {
+    layout: horizontal;
+}
+
+#sidebar {
+    width: 30%;
+    min-width: 25;
+    background: $surface;
+    border-right: solid $primary;
+    padding: 1;
+}
+
+#main_table {
+    width: 70%;
+    height: 100%;
+}
+
+.label {
+    margin-bottom: 1;
+    text-style: bold;
+    color: $accent;
+}
+
+#mode_select {
+    margin-bottom: 2;
+}
+
+#table_select {
+    margin-bottom: 2;
+}
+
+#search_input {
+    margin-bottom: 1;
+}
+
+#clear_button {
+    width: 100%;
+    margin-bottom: 1;
+}
+
+DataTable {
+    background: $surface;
+}
+
+DataTable > .datatable--header {
+    background: $primary;
+    color: $text;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: $accent 50%;
+}
+
+DataTable > .datatable--hover {
+    background: $primary 30%;
+}
+
+/* Search highlighting */
+Input.-focus {
+    border: solid $success;
+}
+
+/* Status messages */
+.success {
+    color: $success;
+}
+
+.error {
+    color: $error;
+}
+
+.warning {
+    color: $warning;
+}

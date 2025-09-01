@@ -5,7 +5,7 @@ from rich.logging import RichHandler
 from rich.table import Table
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(message)s",
     datefmt="[%X]",
     handlers=[RichHandler(rich_tracebacks=True)],

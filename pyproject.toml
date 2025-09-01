@@ -40,9 +40,13 @@ classifiers = [
 dependencies = [
     "access-parser>=0.0.6",
     "mdb-parser>=0.0.3",
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.2",
     "pydantic>=2.11.7",
     "pydantic-settings>=2.10.1",
+    "pyyaml>=6.0.2",
     "rich>=14.1.0",
+    "textual>=6.0.0",
     "typer>=0.17.3",
 ]
 
