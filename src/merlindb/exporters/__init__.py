@@ -3,7 +3,6 @@
 from .base import DataExporter
 from .csv import CSVExporter
 from .json import JSONExporter
-from .xlsx import XLSXExporter
 from .yaml import YAMLExporter
 
 __all__ = [
@@ -11,5 +10,4 @@ __all__ = [
     "JSONExporter",
     "YAMLExporter",
     "CSVExporter",
-    "XLSXExporter",
 ]

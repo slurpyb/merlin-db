@@ -1,168 +1,181 @@
-from access_parser import AccessParser
-from pydantic import BaseModel
+"""Deprecated utilities - functionality moved to parser.py"""
 
-from merlindb.logging import log, print_table
-from merlindb.models.genisys import model_map as genisys_model_map
-from merlindb.models.merlin import MerlinDbModel
+from __future__ import annotations
 
+import fnmatch
+from pathlib import Path
+from typing import Any
 
-def get_mdb(file_path: str) -> AccessParser | None:
-    try:
-        _db = AccessParser(file_path)
-    except Exception as e:
-        print(f"Error loading MDB file: {e}")
-        return None
-    else:
-        return _db
+from merlindb.exporters import CSVExporter, DataExporter, JSONExporter, YAMLExporter
+from merlindb.parser import get_available_tables, get_mdb, get_table_data
 
 
-def read_row(table_name: str, row: dict, models: dict) -> BaseModel | None:
-    if table_name in models.keys():
-        return models[table_name](**row)
-    else:
-        return None
-
-
-def read_genisys_table(db: AccessParser, table_name: str) -> list[BaseModel] | None:
-    table = db.parse_table(table_name)
-    col_names = table.keys()
-    _rows = []
-    return [
-        read_row(table_name, item, genisys_model_map)
-        for item in table_to_dicts(col_names, table.values())
-    ]
-
-
-#
-# def read_dynalite_config(genisys_tables: list[BaseModel]):
-#     _config = MerlinDbModel()
-#     for genisys_table in genisys_tables:
-#         _
-
-
-def load_all(db: AccessParser) -> dict | None:
-    _tables = dict.fromkeys(db.catalog.keys())
-    for table_name, v in _tables.items():
-        _tables[table_name] = read_genisys_table(db, table_name)
-    # _merlin_tables = MerlinDbModel(**{i: v for i, v in _tables.items()})
-    _genisys_dict = {
-        i: list([x.model_dump() for x in v if x is not None]) for i, v in _tables.items()
-    }
-    _merlin_tables = MerlinDbModel(**_genisys_dict)
-    log.info("Loaded all tables")
-    return _merlin_tables.model_dump()
-
-
-def table_to_dicts(table_cols: list[str], table_rows: list[list]) -> list[dict]:
-    """
-    Convert table structure to list of dictionaries.
+# This file is kept for backward compatibility but functionality has been moved to parser.py
+def export_tables(
+    db_path: str,
+    output_path: str,
+    format_name: str = "json",
+    mode: str = "raw",  # Keep for backward compatibility, but ignored
+    tables: list[str] | None = None,
+    single_file: bool = True,
+) -> dict[str, Any]:
+    """Export database tables to files.
 
     Args:
-        table_cols: List of column names (keys for dictionaries)
-        table_rows: List of lists where each inner list contains all values for one column
+        db_path: Path to the MDB database file
+        output_path: Path for output file(s)
+        format_name: Export format ('json', 'yaml', 'csv')
+        mode: Mode (ignored, kept for backward compatibility)
+        tables: List of table patterns to export or None for all tables
+        single_file: If True, export to single file. If False, create separate files.
 
     Returns:
-        List of dictionaries, one per row
+        Dictionary with export results and metadata
+
+    Raises:
+        ValueError: If export fails
     """
-    if not table_cols or not table_rows:
-        return []
+    try:
+        # Get database and available tables
+        db, available_tables = get_database_info(db_path)
 
-    # Transpose the table_rows to get rows instead of columns
-    rows = list(zip(*table_rows, strict=False))
+        # Select which tables to export
+        selected_tables = select_tables(available_tables, tables)
 
-    # Create dictionary for each row
-    return [dict(zip(table_cols, row, strict=False)) for row in rows]
+        # Get exporter for the specified format
+        exporter = get_exporter(db, format_name)
 
+        # Prepare output path
+        output_base = Path(output_path)
+        output_files = []
 
-def read_tables(db: AccessParser) -> None:
-    for k in db.catalog.keys():
-        print(f"{k}\n")
+        if single_file:
+            # Export all selected tables to a single file
+            exporter.export_multiple_tables(selected_tables, output_base, single_file=True)
+            output_files = [str(output_base)]
+        else:
+            # Export each table to separate files
+            exporter.export_multiple_tables(selected_tables, output_base, single_file=False)
 
+            # Build list of output files
+            extension = exporter.get_file_extension()
+            for table in selected_tables:
+                table_file = output_base.parent / f"{output_base.stem}_{table}{extension}"
+                output_files.append(str(table_file))
 
-# def read_table(db: AccessParser, table_name: str) -> None:
-#     table = db.parse_table(table_name)
-#     return
-#     print_table(
-#         table_name,
-#         list(table.keys()),
-#         [list(map(str, v)) for v in zip(*table.values(), strict=False)],
-#     )
+        return {
+            "format": format_name,
+            "tables_exported": len(selected_tables),
+            "table_names": selected_tables,
+            "output_files": output_files,
+        }
 
-
-def parse_object_type(obj_type: str) -> str:
-    match obj_type:
-        case "Fan":
-            return "ceiling_fan"
-        case "ExhaustFan":
-            return "exhaust_fan"
-        case "Curtain":
-            return "curtain"
-        case "GeneralSwitch":
-            return "heater"
-        case _:
-            return "unknown"
-
-
-def get_area_type(obj_types: dict, obj_id: int | None = None):
-    if obj_id:
-        return obj_types.get(obj_id)
-    return "lights"
+    except Exception as e:
+        raise ValueError(f"Export failed: {e}") from e
 
 
-def get_channel_type(obj_types: dict, obj_id: int | None = None, channel_number: int | None = None):
-    if obj_id:
-        match obj_types.get(obj_id):
-            case "curtain":
-                if channel_number == 1:
-                    return "curtain_power"
-                elif channel_number == 2:
-                    return "curtain_direction"
-                else:
-                    return "curtain_unknown"
-            case "heater":
-                return "heater_power"
-            case "exhaust_fan":
-                return "exhaust_fan_power"
-            case "ceiling_fan":
-                if channel_number == 1:
-                    return "ceiling_fan_power"
-                elif channel_number == 2:
-                    return "ceiling_fan_controller"
-                else:
-                    return "ceiling_fan_unknown"
-            case _:
-                return "unknown"
-    else:
-        return "light"
+def get_database_info(db_path: str) -> tuple[Any, list[str]]:
+    """Get database instance and available tables.
+
+    Args:
+        db_path: Path to the MDB database file
+
+    Returns:
+        Tuple of (database instance, list of table names)
+
+    Raises:
+        ValueError: If database cannot be loaded
+    """
+    db = get_mdb(db_path)
+    if not db:
+        raise ValueError(f"Failed to load database from {db_path}")
+
+    tables = get_available_tables(db)
+    return db, tables
 
 
-def read_areas(db: AccessParser) -> None:
-    areas = db.parse_table("AreaNames")
-    print_table(
-        "AreaNames",
-        list(areas.keys()),
-        [list(map(str, v)) for v in zip(*areas.values(), strict=False)],
-    )
-    # areas_extra = db.parse_msys_table().get("AreaNames")
-    # _areas = {}
+def get_exporter(db: Any, format_name: str) -> DataExporter:
+    """Get an exporter instance for the specified format.
 
-    # def handle(item: list):
-    #     return [str(i).strip() if i is not None else "" for i in item]
+    Args:
+        db: Database instance
+        format_name: Export format ('json', 'yaml', 'csv')
 
-    # for k in areas.keys():
-    #     table.add_column(k, justify="right", style="cyan", no_wrap=True)
-    # for count, pk in enumerate(areas.get("Area_ID")):
-    #     print(handle([areas.get(col)[count] for col in areas.keys()]))
-    #     table.add_row(*handle([areas.get(col)[count] for col in areas.keys()]))
+    Returns:
+        DataExporter instance for the specified format
 
-    # console = Console()
-    # console.print(table)
-    # for k,v in areas.columns.values():
-    #     print(f"{k}: {v} aa")
+    Raises:
+        ValueError: If format is not supported
+    """
+
+    # Create a simple provider-like object for backward compatibility with exporters
+    class SimpleDataProvider:
+        def __init__(self, database):
+            self.db = database
+
+        def get_available_tables(self) -> list[str]:
+            return get_available_tables(self.db)
+
+        def get_table_data(self, table_name: str) -> dict[str, Any]:
+            return get_table_data(self.db, table_name)
+
+        def get_mode_name(self) -> str:
+            return "raw"
+
+    provider = SimpleDataProvider(db)
+
+    exporters = {
+        "json": JSONExporter,
+        "yaml": YAMLExporter,
+        "csv": CSVExporter,
+    }
+
+    format_lower = format_name.lower()
+    if format_lower not in exporters:
+        available = ", ".join(exporters.keys())
+        raise ValueError(f"Unsupported format '{format_name}'. Available formats: {available}")
+
+    return exporters[format_lower](provider)
 
 
-# # Tables are stored as defaultdict(list) -- table[column][row_index]
-# table = db.parse_table("table_name")
+def select_tables(
+    available_tables: list[str], table_patterns: list[str] | None = None
+) -> list[str]:
+    """Select tables based on patterns or return all tables.
 
-# # Pretty print all tables
-# db.print_database()
+    Args:
+        available_tables: List of all available table names
+        table_patterns: List of table name patterns (supports wildcards) or None for all tables
+
+    Returns:
+        List of selected table names
+
+    Raises:
+        ValueError: If no tables match the patterns
+    """
+    if not table_patterns:
+        # Return all tables if no patterns specified
+        return available_tables
+
+    selected_tables = set()
+
+    for pattern in table_patterns:
+        # Support exact match and wildcard patterns
+        matches = fnmatch.filter(available_tables, pattern)
+        selected_tables.update(matches)
+
+        # Also try exact match (case-insensitive)
+        for table in available_tables:
+            if table.lower() == pattern.lower():
+                selected_tables.add(table)
+
+    selected_list = sorted(selected_tables)
+
+    if not selected_list:
+        available_str = ", ".join(available_tables)
+        patterns_str = ", ".join(table_patterns)
+        raise ValueError(
+            f"No tables found matching patterns: {patterns_str}. Available tables: {available_str}"
+        )
+
+    return selected_list

@@ -2,9 +2,19 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
-from merlindb.providers import DataProvider
+
+class DataProvider(Protocol):
+    """Protocol for data providers to ensure compatibility."""
+
+    def get_available_tables(self) -> list[str]:
+        """Get list of available table names."""
+        ...
+
+    def get_table_data(self, table_name: str) -> dict[str, Any]:
+        """Get data for a specific table."""
+        ...
 
 
 class DataExporter(ABC):

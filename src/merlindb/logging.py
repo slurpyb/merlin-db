@@ -1,24 +1,29 @@
+"""Logging configuration for MerlinDB."""
+
 import logging
 
-from rich.console import Console
 from rich.logging import RichHandler
-from rich.table import Table
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(message)s",
-    datefmt="[%X]",
-    handlers=[RichHandler(rich_tracebacks=True)],
-)
-
-log = logging.getLogger("rich")
 
 
-def print_table(name: str, columns: list[str], rows: list[list[str]]) -> None:
-    table = Table(title=name)
-    for col in columns:
-        table.add_column(col, justify="right", style="cyan", no_wrap=True)
-    for row in rows:
-        table.add_row(*row)
-    console = Console()
-    console.print(table)
+def setup_logging(
+    level: int = logging.INFO,
+    format: str | None = "%(message)s",
+    datefmt: str | None = "[%X]",
+    *handlers,
+) -> None:
+    """Set up logging with Rich handler."""
+    logging.basicConfig(
+        level=level,
+        format=format,
+        datefmt=datefmt,
+        handlers=[RichHandler(rich_tracebacks=True), *handlers],
+    )
+
+
+def get_logger(name: str = "rich") -> logging.Logger:
+    """Get a logger instance."""
+    return logging.getLogger(name=name)
+
+
+# Default logger for the module
+log = get_logger("merlindb")

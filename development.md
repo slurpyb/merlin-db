@@ -67,16 +67,6 @@ source .venv/bin/activate
 
 See [uv docs](https://docs.astral.sh/uv/) for details.
 
-## Agent Rules
-
-See [.cursor/rules](.cursor/rules) for agent rules.
-These are written for [Cursor](https://www.cursor.com/) but are also used by other
-agents because the Makefile will generate `CLAUDE.md` and `AGENTS.md` from the same
-rules.
-
-```shell
-make agent-rules
-```
 
 ## IDE setup
 
